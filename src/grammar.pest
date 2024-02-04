@@ -1,0 +1,22 @@
+symbol = { 'a'..'z' | 'A'..'Z' | 'а'..'я' | 'А'..'Я' | "_" | '0'..'9' | "+" | "-" | "*" | "=" | "/" | "&" | " " }
+state = @{ ("q"? ~ '1'..'9' ~ ('0'..'9')*) | "_" | "e" }
+direction = { "L" | "R" | "S" | "<" | ">" | "." | "_" }
+
+alphabet_declaration = { "alphabet:" ~ (" " ~ symbol)* ~ COMMENT? }
+states_declaration = { "states:" ~ (" " ~ state)* ~ COMMENT? }
+x_rule_definition = { "x:" ~ (" " ~ action)? ~ COMMENT? }
+tape_definition = { "tape:" ~ " "? ~ (symbol)* ~ COMMENT? }
+expect_definition = { "expect:" ~ " "? ~ (symbol)* ~ COMMENT? }
+
+action = { symbol ~ direction ~ state }
+root = { "[r]" }
+column_header = { "\"" ~ symbol ~ "\"" }
+
+state_table_header = { root ~ (" " ~ column_header)* ~ COMMENT? }
+state_table_row = { "|" ~ state ~ (" "+ ~ action)* ~ COMMENT? }
+
+state_table = { state_table_header ~ (NEWLINE ~ state_table_row)+ }
+
+file = { alphabet_declaration ~ NEWLINE+ ~ states_declaration ~ NEWLINE+ ~ x_rule_definition ~ NEWLINE+ ~ tape_definition ~ NEWLINE+ ~ (expect_definition ~ NEWLINE+)? ~ state_table }
+
+COMMENT = _{ " "* ~ "//" ~ (!NEWLINE ~ ANY)* }
