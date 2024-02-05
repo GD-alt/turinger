@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 pest = "2.7.6"
 pest_derive = { version = "2.7.6", features = [] }
+log = "0.4.20"

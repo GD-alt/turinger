@@ -1,11 +1,11 @@
 alphabet: a b
 states: q1 q2
 
-x: &R_
-
 tape: abababa
-expect: aaaaaaa
+// expect: bbbbbbb
+
+overflow on: 1000
 
 [r] "a" "b" "&"
-|q1 _R_ aR_ &R2
-|q2 bL_ _L_ &Le
+|q1 _R_ aR_ _L2
+|q2 bL_ _L_ _Re
