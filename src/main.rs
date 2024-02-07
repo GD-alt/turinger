@@ -238,7 +238,42 @@ impl TMInterpreter {
 }
 
 fn main() {
-    let file_path = "G:\\Progs\\turinger\\src\\example.tur";
+    let args: Vec<String> = std::env::args().collect();
+    let mut debug = false;
+
+    let cwd = std::env::current_dir().unwrap();
+
+    // Join args into one string
+    let mut file_path = String::new();
+
+    for arg in args.iter() {
+        if arg == "-d" || arg == "--debug"{
+            debug = true;
+            continue;
+        }
+
+        // If contains .exe, skip
+        if arg.contains(".exe") {
+            continue;
+        }
+
+        file_path.push_str(&arg);
+    }
+
+    if file_path == "" {
+        panic!("No file path provided")
+    }
+
+    // If the file path is not absolute, make it absolute (independent of platform)
+    if !file_path.contains(":") {
+        file_path = format!("{}\\{}", cwd.to_str().unwrap(), file_path);
+    }
+
+    // Print if file exists
+    if !std::path::Path::new(&file_path).exists() {
+        panic!("File {} does not exist", file_path);
+    }
+
     let file_data = std::fs::read_to_string(file_path).unwrap();
 
     let data = TMParser::parse(Rule::file, &file_data).unwrap_or_else(|e| panic!("{}", e));
@@ -462,7 +497,7 @@ fn main() {
         caret_position: caret_position as usize,
         overflow_counter,
         transitions,
-        debug: false,
+        debug,
     };
 
     tm.run();
