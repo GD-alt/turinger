@@ -7,5 +7,5 @@ tape: abababa
 overflow on: 1000
 
 [r] "a" "b" "&"
-|q1 _R_ aR_ _L2
+|q1 $R_ aR_ _L2
 |q2 bL_ _L_ _Re

@@ -119,10 +119,37 @@ impl TMInterpreter {
 
             let symbol = &tape[caret_position].to_string();
 
+            if &self.transitions.get(symbol) == &None {
+                panic!("Symbol {} is in alphabet, but no actions for it were defined.", symbol);
+            }
+
+            if &self.transitions[symbol][state] == &None {
+                panic!("State {} is in states, but no actions for it were defined — or no action defined for this state on symbol {}.", state, symbol);
+            }
+
             let transition = &self.transitions[symbol][state];
 
-            if transition.write != '_' {
+            if transition.write != '_' && transition.write != '$'{
                 tape[caret_position] = transition.write;
+            }
+            
+            else if transition.write == '$' {
+                let mut output = String::new();
+
+                for (i, mut symbol) in tape.iter().enumerate() {
+                    if symbol == &'&' {
+                        symbol = &' ';
+                    }
+
+                    if i == caret_position {
+                        output.push_str(&format!("[{}]", symbol));
+                    }
+                    else {
+                        output.push(*symbol);
+                    }
+                }
+
+                println!("({}) {} | {}", step_counter, state, output);
             }
 
             match transition.move_to {
@@ -148,7 +175,7 @@ impl TMInterpreter {
                 _ => unreachable!(),
             }
 
-            if transition.next_state != "e" && transition.next_state != "_" {
+            if transition.next_state != "e" && transition.next_state != "_" && transition.next_state != "!" {
                 state = &transition.next_state;
             }
             else if transition.next_state == "e" {
@@ -201,6 +228,31 @@ impl TMInterpreter {
                 return;
             }
 
+            else if transition.next_state == "!" {
+                cut_tape(&mut tape);
+
+                if &tape.len() > &caret_position {
+                    caret_position = tape.len() - 1;
+                }
+
+                let mut output = String::new();
+
+                for (i, mut symbol) in tape.iter().enumerate() {
+                    if symbol == &'&' {
+                        symbol = &' ';
+                    }
+
+                    if i == caret_position {
+                        output.push_str(&format!("[{}]", symbol));
+                    }
+                    else {
+                        output.push(*symbol);
+                    }
+                }
+
+                panic!("Reached unreachable cell!\nTape: {}", output);
+            }
+
             else {
 
             }
@@ -213,6 +265,7 @@ impl TMInterpreter {
             }
 
             prev_transition = transition;
+            step_counter += 1;
 
             if self.debug {
                 let mut output = String::new();
@@ -229,7 +282,6 @@ impl TMInterpreter {
                         output.push(*symbol);
                     }
                 }
-                step_counter += 1;
 
                 println!("({}) {} | {}", step_counter, state, output);
             }
@@ -296,8 +348,15 @@ fn main() {
                     for alphabet_pair in inner_pair.into_inner() {
                         match alphabet_pair.as_rule() {
                             Rule::symbol => {
-                                alphabet.push(alphabet_pair.as_str().chars().next().unwrap());
+                                let sym = alphabet_pair.as_str().chars().next().unwrap();
+
+                                if sym == '_' || sym == '$' || sym == '~' || sym == '&' {
+                                    panic!("Symbol {} is reserved", sym);
+                                }
+
+                                alphabet.push(sym);
                             }
+
                             _ => unreachable!(),
                         }
                     }
@@ -309,6 +368,7 @@ fn main() {
                             Rule::state => {
                                 states.push(state_pair.as_str().to_string());
                             }
+
                             _ => unreachable!(),
                         }
                     }
@@ -426,6 +486,20 @@ fn main() {
                                 for (i, state_table_row_pair) in state_table_pair.into_inner().enumerate() {
                                     match state_table_row_pair.as_rule() {
                                         Rule::state => {
+                                            let inner_state = state_table_row_pair.as_str().to_string();
+
+                                            if inner_state == "e" {
+                                                panic!("You can't define any action for exit (e) state.")
+                                            }
+
+                                            if inner_state == "!" {
+                                                panic!("You can't define any action for unreachable (!) state.")
+                                            }
+
+                                            if inner_state == "_" {
+                                                panic!("You can't define any action for state maintaining (_).")
+                                            }
+
                                             state = state_table_row_pair.as_str().to_string();
                                         }
 
@@ -449,11 +523,11 @@ fn main() {
                                                     Rule::state => {
                                                         let mut inner_state = action_pair.as_str().to_string();
 
-                                                        if inner_state.chars().nth(0usize).unwrap() != 'q' && inner_state != "e" && inner_state != "_" {
+                                                        if inner_state.chars().nth(0usize).unwrap() != 'q' && inner_state != "e" && inner_state != "_" && inner_state != "!"{
                                                             inner_state = format!("q{}", inner_state);
                                                         }
 
-                                                        if !states.contains(&inner_state) && inner_state != "e" && inner_state != "_" {
+                                                        if !states.contains(&inner_state) && inner_state != "e" && inner_state != "_" && inner_state != "!" {
                                                             // Get states list as a space-separated string
                                                             let mut loc_states = String::new();
 
